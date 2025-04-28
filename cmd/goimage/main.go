@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/nirdeo/goimage/pkg/processor"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
-	"github.com/victordedomenico/goimage/pkg/processor"
 	"os"
 	"path/filepath"
 )

@@ -18,6 +18,16 @@ GoImage is a command-line tool for image compression, inspired by Squoosh and Ri
 
 ### Building from source
 
+#### Windows (PowerShell)
+
+```powershell
+git clone https://github.com/Nirdeo/goimage.git
+cd goimage
+go build -o goimage.exe .\cmd\goimage
+```
+
+#### macOS/Linux (Bash/Zsh)
+
 ```bash
 git clone https://github.com/Nirdeo/goimage.git
 cd goimage
@@ -26,29 +36,58 @@ go build -o goimage ./cmd/goimage
 
 ## Usage
 
-```bash
+### Windows (PowerShell)
+
+```powershell
 # Basic usage
-goimage --input image.png --output compressed.webp
+.\goimage.exe --input image.png --output compressed.webp
 # or using short flags
-goimage -i image.png -o compressed.webp
+.\goimage.exe -i image.png -o compressed.webp
 
 # Specify format and quality
-goimage --input image.jpg --format webp --quality 80
+.\goimage.exe --input image.jpg --format webp --quality 80
 # or using short flags
-goimage -i image.jpg -f webp -q 80
+.\goimage.exe -i image.jpg -f webp -q 80
 
 # Use OptiPNG for better PNG compression
-goimage --input image.png --format optipng
+.\goimage.exe --input image.png --format optipng
 # or using short flags
-goimage -i image.png -f optipng
+.\goimage.exe -i image.png -f optipng
 
 # Use MozJPEG for better JPEG compression
-goimage --input image.png --format mozjpeg --quality 85
+.\goimage.exe --input image.png --format mozjpeg --quality 85
 # or using short flags
-goimage -i image.png -f mozjpeg -q 85
+.\goimage.exe -i image.png -f mozjpeg -q 85
 
 # Show help
-goimage --help
+.\goimage.exe --help
+```
+
+### macOS/Linux (Bash/Zsh)
+
+```bash
+# Basic usage
+./goimage --input image.png --output compressed.webp
+# or using short flags
+./goimage -i image.png -o compressed.webp
+
+# Specify format and quality
+./goimage --input image.jpg --format webp --quality 80
+# or using short flags
+./goimage -i image.jpg -f webp -q 80
+
+# Use OptiPNG for better PNG compression
+./goimage --input image.png --format optipng
+# or using short flags
+./goimage -i image.png -f optipng
+
+# Use MozJPEG for better JPEG compression
+./goimage --input image.png --format mozjpeg --quality 85
+# or using short flags
+./goimage -i image.png -f mozjpeg -q 85
+
+# Show help
+./goimage --help
 ```
 
 ### Command-line options
