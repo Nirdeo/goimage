@@ -15,6 +15,7 @@ GoImage is a command-line tool for image compression, inspired by Squoosh and Ri
 ### Prerequisites
 
 - Go 1.18 or higher
+- For WebP conversion, the WebP binaries will be automatically downloaded on first use
 
 ### Building from source
 
@@ -103,10 +104,10 @@ go build -o goimage ./cmd/goimage
 This project is under development. Currently implemented features:
 - Basic PNG compression
 - Basic JPEG compression
+- WebP compression
 - Progress bar for visual feedback during processing
 
 Coming soon:
-- WebP support
 - OptiPNG integration
 - MozJPEG integration
 

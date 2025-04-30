@@ -3,13 +3,24 @@ package processor
 import (
 	"errors"
 	"fmt"
-	"github.com/schollz/progressbar/v3"
 	"image"
 	"image/jpeg"
 	"image/png"
 	"os"
 	"strings"
+
+	"github.com/nickalie/go-webpbin"
+	"github.com/schollz/progressbar/v3"
+
+	// Register WebP decoder
+	_ "golang.org/x/image/webp"
 )
+
+// Initialize webpbin library
+func init() {
+	// Check for unsupported platforms
+	webpbin.DetectUnsupportedPlatforms()
+}
 
 // Processor defines the interface for image processing
 type Processor interface {
@@ -163,27 +174,25 @@ type WebPProcessor struct{}
 
 // Process implements the Processor interface for WebP
 func (p *WebPProcessor) Process(inputPath, outputPath string, quality int, bar *progressbar.ProgressBar) error {
-	// Load the input image
-	bar.Describe("Loading image...")
-	_, err := loadImage(inputPath)
-	if err != nil {
-		return err
-	}
-	bar.Add(50) // 50% progress after loading
 
-	// Create the output file
-	bar.Describe("Creating output file...")
-	outFile, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-	bar.Add(10) // 60% progress after creating file
+	bar.Describe("Setting up WebP encoding...")
+	// Setup CWebP encoder
+	cwebp := webpbin.NewCWebP()
+	cwebp.InputFile(inputPath)
+	cwebp.OutputFile(outputPath)
+	cwebp.Quality(uint(quality))
 
-	// TODO: Implement WebP encoding
-	// The standard library doesn't support WebP encoding
-	// We'll need to use a third-party library or call a binary
-	bar.Describe("WebP encoding not implemented")
-	bar.Add(40) // 100% progress
-	return errors.New("WebP encoding not yet implemented")
+	bar.Add(20) // 20% progress after setup
+
+	// Show progress
+	bar.Describe("Encoding to WebP...")
+
+	// Run the encoder
+	err := cwebp.Run()
+	if err != nil {
+		return fmt.Errorf("failed to encode image as WebP: %v", err)
+	}
+
+	bar.Add(80) // 100% progress after encoding
+	return nil
 }
