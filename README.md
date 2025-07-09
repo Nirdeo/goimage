@@ -1,160 +1,156 @@
-# GoImage
+# GoImage - Convertisseur et éditeur d'images en TUI
 
-GoImage is a command-line tool for image compression, inspired by Squoosh and Rimage, but implemented in Go. It supports multiple image formats including PNG, JPEG, WebP, OptiPNG, and MozJPEG.
+## Présentation
 
-## Features
+GoImage est un outil en ligne de commande (TUI) pour convertir, éditer et dessiner sur des images, écrit en Go **sans dépendances externes** (hors standard et x/image). Il permet d'appliquer des effets, de dessiner des formes, de modifier des pixels, etc.
 
-- Compress images to various formats (PNG, JPEG, WebP)
-- Support for advanced compression algorithms (OptiPNG, MozJPEG)
-- **Parallel batch processing** with worker pools (4-8 workers based on CPU cores)
-- **Single file and directory processing** modes
-- **Recursive directory processing** for nested folder structures
-- Simple command-line interface
-- Configurable compression quality
-- Progress bar for visual feedback during processing
-- **Skip existing files** option for incremental processing
-- **Automatic worker scaling** based on system capabilities
+---
 
-## Installation
+## Architecture du projet
 
-### Prerequisites
-
-- Go 1.18 or higher
-- For WebP conversion, the WebP binaries will be automatically downloaded on first use
-- For OptiPNG optimization: Install OptiPNG (`optipng` command must be available in PATH)
-- For MozJPEG optimization: Install MozJPEG (`cjpeg` command must be available in PATH)
-
-#### Installing OptiPNG and MozJPEG
-
-**Windows:**
-- OptiPNG: Download from [http://optipng.sourceforge.net/](http://optipng.sourceforge.net/) or use `choco install optipng`
-- MozJPEG: Download from [https://github.com/mozilla/mozjpeg/releases](https://github.com/mozilla/mozjpeg/releases)
-
-**macOS:**
-```bash
-# Using Homebrew
-brew install optipng mozjpeg
+```
+goimage/
+│
+├── cmd/
+│   └── goimage/
+│       └── main.go         # Point d’entrée, interface TUI, logique utilisateur
+│
+├── pkg/
+│   └── effects/
+│       ├── interface.go    # Interface Effect
+│       ├── negative.go     # Effet négatif
+│       ├── grayscale.go    # Effet niveaux de gris
+│       ├── shapes.go       # Formes géométriques (carré, cercle, triangle, ligne)
+│       └── ...             # Autres effets (séparés par type)
+│
+├── test/
+│   └── test_image.png      # Images de test
+│
+├── go.mod
+├── go.sum
+└── README.md
 ```
 
-**Ubuntu/Debian:**
-```bash
-# OptiPNG
-sudo apt install optipng
+---
 
-# MozJPEG (may need to build from source or use alternative repos)
+## Rôle des fichiers principaux
+
+### `cmd/goimage/main.go`
+
+- **Rôle** : Point d’entrée du programme, gère l’interface utilisateur (TUI), les menus, la navigation, la saisie utilisateur, et appelle les fonctions d’effets/dessin.
+- **Contenu** :
+  - Menus (conversion, édition, dessin…)
+  - Fonctions pour demander les paramètres à l’utilisateur
+  - Appels à la librairie d’effets (ex : `effects.Apply(img, params)`)
+
+### `pkg/effects/interface.go`
+
+- **Rôle** : Définit l’interface `Effect` que tous les effets doivent implémenter.
+- **Contenu** :
+
+```go
+package effects
+import "image"
+type Effect interface {
+    Apply(img image.Image) image.Image
+    Name() string
+    Description() string
+}
 ```
 
-**Note:** If these tools are not installed, GoImage will automatically fall back to basic compression methods.
+### `pkg/effects/negative.go`, `grayscale.go`, ...
 
-### Building from source
+- **Rôle** : Chaque fichier contient un effet (ou une famille d’effets) spécifique.
+- **Exemple** :
 
-#### Windows (PowerShell)
-
-```powershell
-git clone https://github.com/Nirdeo/goimage.git
-cd goimage
-go build -o goimage.exe .\cmd\goimage
+```go
+package effects
+import (
+    "image"
+    "image/color"
+)
+type NegativeEffect struct{}
+func (n *NegativeEffect) Name() string { return "Négatif" }
+func (n *NegativeEffect) Description() string { return "Inverse toutes les couleurs de l'image" }
+func (n *NegativeEffect) Apply(img image.Image) image.Image { ... }
 ```
 
-#### macOS/Linux (Bash/Zsh)
+### `pkg/effects/shapes.go`
 
-```bash
-git clone https://github.com/Nirdeo/goimage.git
-cd goimage
-go build -o goimage ./cmd/goimage
+- **Rôle** : Contient les effets pour dessiner des formes géométriques (carré, cercle, triangle, ligne).
+- **Exemple** :
+
+```go
+package effects
+import (
+    "image"
+    "image/color"
+)
+type SquareEffect struct { X, Y, Size int; Color color.Color }
+func (s *SquareEffect) Apply(img image.Image) image.Image { ... }
 ```
 
-## Usage
+---
 
-### Windows (PowerShell)
+## Fonctionnement de la librairie d’effets
 
-```powershell
-# Single file processing
-.\goimage.exe --input image.png --output compressed.webp
-.\goimage.exe -i image.png -o compressed.webp
+- **Interface** : Tous les effets implémentent `Effect`.
+- **Application** :
+  - L’utilisateur choisit un effet dans le TUI.
+  - Le programme crée une instance de l’effet avec les bons paramètres.
+  - Il appelle `Apply(img)` pour obtenir l’image modifiée.
+  - Le résultat est sauvegardé.
+- **Ajout d’un effet** :
+  - Créer une nouvelle struct qui implémente `Effect` dans un fichier séparé.
+  - Ajouter l’effet dans le menu du TUI.
 
-# Specify format and quality
-.\goimage.exe --input image.jpg --format webp --quality 80
-.\goimage.exe -i image.jpg -f webp -q 80
+---
 
-# Use OptiPNG for better PNG compression
-.\goimage.exe --input image.png --format optipng
-.\goimage.exe -i image.png -f optipng
+## Découpage recommandé pour gros fichiers
 
-# Use MozJPEG for better JPEG compression
-.\goimage.exe --input image.png --format mozjpeg --quality 85
-.\goimage.exe -i image.png -f mozjpeg -q 85
+Quand un fichier devient trop gros, découpe-le ainsi :
 
-# Batch processing with parallel workers
-.\goimage.exe --input-dir .\images --output-dir .\compressed --format webp --workers 6
-.\goimage.exe --input-dir .\images --format optipng --workers 4 --quality 90
+- **interface.go** : interface `Effect`
+- **negative.go** : effet négatif
+- **grayscale.go** : effet niveaux de gris
+- **shapes.go** : formes géométriques
+- **brightness.go**, **contrast.go**, etc. : autres effets
+- **utils.go** : fonctions utilitaires (min, max, abs…)
 
-# Recursive processing with auto worker scaling
-.\goimage.exe --input-dir .\photos --format webp --recursive --workers 0 --quality 85
+Tous les fichiers d’un même dossier et du même package sont compilés ensemble.
 
-# Skip existing files (incremental processing)
-.\goimage.exe --input-dir .\images --format mozjpeg --skip-existing --quality 90
+---
 
-# Show help
-.\goimage.exe --help
+## Exemple d’utilisation dans le main.go
+
+```go
+import "github.com/nirdeo/goimage/pkg/effects"
+
+// Création d’un effet carré
+square := &effects.SquareEffect{X: 10, Y: 10, Size: 50, Color: color.RGBA{255,0,0,255}}
+result := square.Apply(img)
 ```
 
-### macOS/Linux (Bash/Zsh)
+---
 
-```bash
-# Basic usage
-./goimage --input image.png --output compressed.webp
-# or using short flags
-./goimage -i image.png -o compressed.webp
+## Bonnes pratiques
 
-# Specify format and quality
-./goimage --input image.jpg --format webp --quality 80
-# or using short flags
-./goimage -i image.jpg -f webp -q 80
+- Un fichier = un type d’effet ou une famille d’effets
+- Utilise des interfaces pour la flexibilité
+- Passe les paramètres via des structs
+- Mets les fonctions utilitaires dans un fichier à part
+- Commente chaque effet, chaque fonction
 
-# Use OptiPNG for better PNG compression
-./goimage --input image.png --format optipng
-# or using short flags
-./goimage -i image.png -f optipng
+---
 
-# Use MozJPEG for better JPEG compression
-./goimage --input image.png --format mozjpeg --quality 85
-# or using short flags
-./goimage -i image.png -f mozjpeg -q 85
+## Pour aller plus loin
 
-# Show help
-./goimage --help
-```
+- Ajoute d’autres effets dans des fichiers séparés
+- Ajoute des outils de dessin interactif dans `pkg/drawing/`
+- Utilise la même logique de découpage pour le TUI si besoin (ex : menus dans un fichier, gestion des entrées dans un autre…)
 
-### Command-line options
+---
 
-#### Single file processing
-- `--input`, `-i`: Input image file path
-- `--output`, `-o`: Output image file path (if not specified, will use input filename with appropriate extension)
+## Auteur
 
-#### Batch processing
-- `--input-dir`: Input directory containing images for batch processing
-- `--output-dir`: Output directory for batch processing (if not specified, outputs will be placed next to input files)
-- `--recursive`: Process images in subdirectories recursively
-- `--skip-existing`: Skip processing if output file already exists
-- `--workers`, `-w`: Number of worker goroutines (0 = auto: 4-8 based on CPU cores)
-
-#### Common options
-- `--format`, `-f`: Output format: png, jpeg, webp, optipng, mozjpeg (default: auto - based on output file extension)
-- `--quality`, `-q`: Compression quality (0-100, higher is better quality, default: 75)
-- `--help`, `-h`: Show help
-
-## Current Status
-
-This project is fully functional with the following features:
-- Basic PNG compression
-- Basic JPEG compression
-- WebP compression
-- OptiPNG integration (requires optipng binary)
-- MozJPEG integration (requires mozjpeg cjpeg binary)
-- Progress bar for visual feedback during processing
-- Automatic fallback to basic compression when external tools are not available
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+Projet GoImage, architecture modulaire et évolutive, inspirée par les bonnes pratiques Go.
