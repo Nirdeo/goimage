@@ -2,7 +2,7 @@
 
 ## Présentation
 
-GoImage est un outil en ligne de commande (TUI) pour convertir, éditer et dessiner sur des images, écrit en Go **sans dépendances externes** (hors standard et x/image). Il permet d'appliquer des effets, de dessiner des formes, de modifier des pixels, etc.
+GoImage est un outil en ligne de commande (TUI) pour convertir, éditer et dessiner sur des images, écrit en Go **sans aucune dépendance externe**, uniquement avec les bibliothèques standard. Il permet d'appliquer des effets, de dessiner des formes, de redimensionner des images et de convertir entre formats.
 
 ---
 
@@ -13,44 +13,73 @@ goimage/
 │
 ├── cmd/
 │   └── goimage/
-│       └── main.go         # Point d’entrée, interface TUI, logique utilisateur
-│
-├── pkg/
-│   └── effects/
-│       ├── interface.go    # Interface Effect
-│       ├── negative.go     # Effet négatif
-│       ├── grayscale.go    # Effet niveaux de gris
-│       ├── shapes.go       # Formes géométriques (carré, cercle, triangle, ligne)
-│       └── ...             # Autres effets (séparés par type)
+│       ├── main.go         # Point d'entrée, effets, logique de traitement d'images
+│       └── tui.go          # Interface utilisateur TUI (menus, couleurs, layout)
 │
 ├── test/
-│   └── test_image.png      # Images de test
+│   ├── test_image.png      # Image de test
+│   └── fond_blanc.png      # Image de test
 │
-├── go.mod
-├── go.sum
+├── go.mod                  # Configuration du module Go (sans dépendances)
 └── README.md
 ```
 
 ---
 
-## Rôle des fichiers principaux
+## Fonctionnalités
 
-### `cmd/goimage/main.go`
+- **Interface utilisateur** : TUI colorée et interactive inspirée de Bubble Tea
+- **Manipulation d'images** :
+  - Chargement d'images (PNG, JPEG, GIF)
+  - Sauvegarde dans différents formats
+  - Affichage des métadonnées d'image
+- **Effets** :
+  - Négatif
+  - Niveaux de gris
+  - Sépia
+- **Dessin** :
+  - Carré
+  - Cercle
+- **Conversion** :
+  - Entre PNG, JPEG (plusieurs niveaux de qualité) et GIF
+  - Redimensionnement avec préservation du ratio
 
-- **Rôle** : Point d’entrée du programme, gère l’interface utilisateur (TUI), les menus, la navigation, la saisie utilisateur, et appelle les fonctions d’effets/dessin.
-- **Contenu** :
-  - Menus (conversion, édition, dessin…)
-  - Fonctions pour demander les paramètres à l’utilisateur
-  - Appels à la librairie d’effets (ex : `effects.Apply(img, params)`)
+---
 
-### `pkg/effects/interface.go`
+## Utilisation
 
-- **Rôle** : Définit l’interface `Effect` que tous les effets doivent implémenter.
-- **Contenu** :
+### Installation
+
+Pour compiler le projet en un exécutable unique :
+
+```bash
+go build -o goimage cmd/goimage/main.go cmd/goimage/tui.go
+```
+
+Puis exécutez le programme avec :
+
+```bash
+./goimage
+```
+
+### Menu principal
+
+- **Charger une image** : Ouvrir une image depuis le système de fichiers
+- **Appliquer un effet** : Appliquer un effet (négatif, niveaux de gris, sépia)
+- **Dessiner une forme** : Ajouter une forme à l'image (carré, cercle)
+- **Convertir l'image** : Modifier le format ou redimensionner
+- **Sauvegarder l'image** : Enregistrer l'image modifiée
+- **Quitter** : Fermer l'application
+
+---
+
+## Implémentation technique
+
+### Interface Effect
+
+Tous les effets implémentent l'interface `Effect` :
 
 ```go
-package effects
-import "image"
 type Effect interface {
     Apply(img image.Image) image.Image
     Name() string
@@ -58,96 +87,76 @@ type Effect interface {
 }
 ```
 
-### `pkg/effects/negative.go`, `grayscale.go`, ...
-
-- **Rôle** : Chaque fichier contient un effet (ou une famille d’effets) spécifique.
-- **Exemple** :
+### Exemple d'effet (Négatif)
 
 ```go
-package effects
-import (
-    "image"
-    "image/color"
-)
 type NegativeEffect struct{}
+
 func (n *NegativeEffect) Name() string { return "Négatif" }
 func (n *NegativeEffect) Description() string { return "Inverse toutes les couleurs de l'image" }
-func (n *NegativeEffect) Apply(img image.Image) image.Image { ... }
+func (n *NegativeEffect) Apply(img image.Image) image.Image {
+    bounds := img.Bounds()
+    result := image.NewRGBA(bounds)
+    
+    for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+        for x := bounds.Min.X; x < bounds.Max.X; x++ {
+            r, g, b, a := img.At(x, y).RGBA()
+            result.Set(x, y, color.RGBA{
+                uint8(255 - uint8(r>>8)),
+                uint8(255 - uint8(g>>8)),
+                uint8(255 - uint8(b>>8)),
+                uint8(a >> 8),
+            })
+        }
+    }
+    return result
+}
 ```
 
-### `pkg/effects/shapes.go`
+### Interface TUI
 
-- **Rôle** : Contient les effets pour dessiner des formes géométriques (carré, cercle, triangle, ligne).
-- **Exemple** :
+L'interface utilisateur est implémentée avec des séquences d'échappement ANSI pour les couleurs et les bordures, sans dépendance externe.
 
 ```go
-package effects
-import (
-    "image"
-    "image/color"
-)
-type SquareEffect struct { X, Y, Size int; Color color.Color }
-func (s *SquareEffect) Apply(img image.Image) image.Image { ... }
+// Exemple d'affichage d'un cadre coloré
+func drawBox(title string, content []string, width int) {
+    // Ligne supérieure
+    fmt.Print(ColorCyan)
+    fmt.Print("╭")
+    // ... suite du code ...
+    fmt.Println("╯" + ColorReset)
+}
 ```
 
 ---
 
-## Fonctionnement de la librairie d’effets
+## Limitations et bonnes pratiques
 
-- **Interface** : Tous les effets implémentent `Effect`.
-- **Application** :
-  - L’utilisateur choisit un effet dans le TUI.
-  - Le programme crée une instance de l’effet avec les bons paramètres.
-  - Il appelle `Apply(img)` pour obtenir l’image modifiée.
-  - Le résultat est sauvegardé.
-- **Ajout d’un effet** :
-  - Créer une nouvelle struct qui implémente `Effect` dans un fichier séparé.
-  - Ajouter l’effet dans le menu du TUI.
+- Formats supportés limités à JPEG, PNG et GIF
+- Le redimensionnement utilise l'algorithme du plus proche voisin (rapide mais moins précis)
+- Utilisez les barres de progression pour suivre l'état des opérations longues
+- Préférez des images de taille raisonnable (<10 Mo) pour de meilleures performances
 
 ---
 
-## Découpage recommandé pour gros fichiers
+## Caractéristiques techniques
 
-Quand un fichier devient trop gros, découpe-le ainsi :
-
-- **interface.go** : interface `Effect`
-- **negative.go** : effet négatif
-- **grayscale.go** : effet niveaux de gris
-- **shapes.go** : formes géométriques
-- **brightness.go**, **contrast.go**, etc. : autres effets
-- **utils.go** : fonctions utilitaires (min, max, abs…)
-
-Tous les fichiers d’un même dossier et du même package sont compilés ensemble.
-
----
-
-## Exemple d’utilisation dans le main.go
-
-```go
-import "github.com/nirdeo/goimage/pkg/effects"
-
-// Création d’un effet carré
-square := &effects.SquareEffect{X: 10, Y: 10, Size: 50, Color: color.RGBA{255,0,0,255}}
-result := square.Apply(img)
-```
-
----
-
-## Bonnes pratiques
-
-- Un fichier = un type d’effet ou une famille d’effets
-- Utilise des interfaces pour la flexibilité
-- Passe les paramètres via des structs
-- Mets les fonctions utilitaires dans un fichier à part
-- Commente chaque effet, chaque fonction
+- Écrit en Go natif (100% bibliothèque standard)
+- Aucune dépendance externe
+- Interface TUI colorée et intuitive
+- Algorithmes d'effets implémentés manuellement
+- Traitement pixel par pixel pour une compatibilité maximale
+- Compatible avec les formats d'image standard
 
 ---
 
 ## Pour aller plus loin
 
-- Ajoute d’autres effets dans des fichiers séparés
-- Ajoute des outils de dessin interactif dans `pkg/drawing/`
-- Utilise la même logique de découpage pour le TUI si besoin (ex : menus dans un fichier, gestion des entrées dans un autre…)
+- Ajouter d'autres effets (contraste, luminosité, flou...)
+- Améliorer l'algorithme de redimensionnement (bilinéaire, bicubique)
+- Ajouter des outils de sélection de zones
+- Implémenter des filtres de convolution
+- Ajouter des outils de dessin plus avancés (ligne, triangle, texte)
 
 ---
 
