@@ -1,84 +1,106 @@
-# GoImage - Convertisseur et éditeur d'images en TUI
+# GoImage - Éditeur d'Images TUI 🎨
 
-## Présentation
+## 🚀 Présentation
 
-GoImage est un outil en ligne de commande (TUI) pour convertir, éditer et dessiner sur des images, écrit en Go **sans aucune dépendance externe**, uniquement avec les bibliothèques standard. Il permet d'appliquer des effets, de dessiner des formes, de redimensionner des images et de convertir entre formats.
+GoImage est un éditeur d'images TUI (Terminal User Interface) écrit en Go **100% natif** sans dépendances externes.
+
+**Fonctionnalités principales :**
+- 🔍 Navigation de fichiers interactive
+- ✨ 5 effets d'image (négatif, gris, sépia, luminosité, contraste)
+- 🔶 Dessin de formes (carré, cercle)
+- 🔄 Conversion multi-formats (PNG, JPEG, GIF)
+- 💡 Système d'aide contextuel ('h')
+- 📊 Barres de progression animées
 
 ---
 
-## Architecture du projet
+## 🏗️ Architecture du Projet
 
 ```
 goimage/
 │
-├── cmd/
-│   └── goimage/
-│       ├── main.go         # Point d'entrée, effets, logique de traitement d'images
-│       └── tui.go          # Interface utilisateur TUI (menus, couleurs, layout)
+├── cmd/goimage/
+│   ├── main.go         # Logique métier, effets, workflows
+│   ├── tui.go          # Interface TUI (couleurs, menus, progression)
+│   └── fileutils.go    # Navigation de fichiers interactive
+│
+├── pkg/effects/
+│   ├── interface.go    # Interface Effect commune
+│   ├── negative.go     # Effet négatif
+│   ├── grayscale.go    # Conversion niveaux de gris
+│   ├── sepia.go        # Effet sépia vintage
+│   ├── brightness.go   # Ajustement luminosité
+│   ├── contrast.go     # Ajustement contraste
+│   └── shapes.go       # Formes géométriques
 │
 ├── test/
-│   ├── test_image.png      # Image de test
-│   └── fond_blanc.png      # Image de test
+│   ├── test_image.png  # Image de test
+│   └── fond_blanc.png  # Image de test
 │
-├── go.mod                  # Configuration du module Go (sans dépendances)
+├── go.mod              # Configuration module Go (sans dépendances)
 └── README.md
 ```
 
 ---
 
-## Fonctionnalités
+## 🚀 Démarrage Rapide
 
-- **Interface utilisateur** : TUI colorée et interactive inspirée de Bubble Tea
-- **Manipulation d'images** :
-  - Chargement d'images (PNG, JPEG, GIF)
-  - Sauvegarde dans différents formats
-  - Affichage des métadonnées d'image
-- **Effets** :
-  - Négatif
-  - Niveaux de gris
-  - Sépia
-- **Dessin** :
-  - Carré
-  - Cercle
-- **Conversion** :
-  - Entre PNG, JPEG (plusieurs niveaux de qualité) et GIF
-  - Redimensionnement avec préservation du ratio
-
----
-
-## Utilisation
-
-### Installation
-
-Pour compiler le projet en un exécutable unique :
+### Installation et Test
 
 ```bash
-go build -o goimage cmd/goimage/main.go cmd/goimage/tui.go
-```
+# Compilation
+go build -o goimage ./cmd/goimage/
 
-Puis exécutez le programme avec :
-
-```bash
+# Lancement
 ./goimage
+
+# Test avec image fournie
+# 1. Choisir option 1 (Charger une image)
+# 2. Navigation interactive → sélectionner test/test_image.png
+# 3. Appliquer effet sépia (option 2 → 3)
+# 4. Sauvegarder (option 5 → test_sepia.png)
 ```
 
-### Menu principal
+### Workflow Principal
 
-- **Charger une image** : Ouvrir une image depuis le système de fichiers
-- **Appliquer un effet** : Appliquer un effet (négatif, niveaux de gris, sépia)
-- **Dessiner une forme** : Ajouter une forme à l'image (carré, cercle)
-- **Convertir l'image** : Modifier le format ou redimensionner
-- **Sauvegarder l'image** : Enregistrer l'image modifiée
-- **Quitter** : Fermer l'application
+1. **📥 Charger** : Option 1 → Navigation interactive → `test/test_image.png`
+2. **✨ Appliquer effet** : Option 2 → Choisir un effet
+3. **🔶 Dessiner forme** : Option 3 → Carré/Cercle (optionnel)
+4. **💾 Sauvegarder** : Option 5 → Nom du fichier
+
+### Raccourcis Clavier
+
+- **1-6** : Sélection options
+- **h** : Aide contextuelle
+- **q** : Quitter
 
 ---
 
-## Implémentation technique
+## 🎯 Fonctionnalités
+
+### Effets d'Image
+- **Négatif** : Inversion couleurs
+- **Niveaux de gris** : Conversion N&B
+- **Sépia** : Effet vintage
+- **Luminosité** : Paramétrable (0.5-3.0)
+- **Contraste** : Paramétrable (0.5-3.0)
+
+### Formes
+- **Carré** : Position X,Y + taille
+- **Cercle** : Centre X,Y + rayon
+- **Couleurs RGB** : Format `255,0,0` (rouge)
+
+### Conversion
+- **PNG** : Qualité max, transparence
+- **JPEG** : Qualité 75/95/personnalisée
+- **GIF** : Palette optimisée
+- **Redimensionnement** : Préservation ratio
+
+---
+
+## 🛠️ Implémentation
 
 ### Interface Effect
-
-Tous les effets implémentent l'interface `Effect` :
-
 ```go
 type Effect interface {
     Apply(img image.Image) image.Image
@@ -87,79 +109,58 @@ type Effect interface {
 }
 ```
 
-### Exemple d'effet (Négatif)
-
+### Ajouter un Effet
 ```go
-type NegativeEffect struct{}
+// 1. Créer pkg/effects/nouvel_effet.go
+type NouvelEffect struct { /* paramètres */ }
 
-func (n *NegativeEffect) Name() string { return "Négatif" }
-func (n *NegativeEffect) Description() string { return "Inverse toutes les couleurs de l'image" }
-func (n *NegativeEffect) Apply(img image.Image) image.Image {
-    bounds := img.Bounds()
-    result := image.NewRGBA(bounds)
-    
-    for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-        for x := bounds.Min.X; x < bounds.Max.X; x++ {
-            r, g, b, a := img.At(x, y).RGBA()
-            result.Set(x, y, color.RGBA{
-                uint8(255 - uint8(r>>8)),
-                uint8(255 - uint8(g>>8)),
-                uint8(255 - uint8(b>>8)),
-                uint8(a >> 8),
-            })
-        }
-    }
-    return result
+func (e *NouvelEffect) Apply(img image.Image) image.Image {
+    // Algorithme de traitement
 }
+
+// 2. Ajouter dans main.go applyEffectEnhanced()
+case "6":
+    effect = &effects.NouvelEffect{}
 ```
 
-### Interface TUI
-
-L'interface utilisateur est implémentée avec des séquences d'échappement ANSI pour les couleurs et les bordures, sans dépendance externe.
-
+### Navigation de Fichiers
 ```go
-// Exemple d'affichage d'un cadre coloré
-func drawBox(title string, content []string, width int) {
-    // Ligne supérieure
-    fmt.Print(ColorCyan)
-    fmt.Print("╭")
-    // ... suite du code ...
-    fmt.Println("╯" + ColorReset)
+type FileInfo struct {
+    Name    string
+    IsDir   bool
+    Size    int64
+    ModTime string
 }
 ```
 
 ---
 
-## Limitations et bonnes pratiques
+## 📋 Caractéristiques Techniques
 
-- Formats supportés limités à JPEG, PNG et GIF
-- Le redimensionnement utilise l'algorithme du plus proche voisin (rapide mais moins précis)
-- Utilisez les barres de progression pour suivre l'état des opérations longues
-- Préférez des images de taille raisonnable (<10 Mo) pour de meilleures performances
-
----
-
-## Caractéristiques techniques
-
-- Écrit en Go natif (100% bibliothèque standard)
-- Aucune dépendance externe
-- Interface TUI colorée et intuitive
-- Algorithmes d'effets implémentés manuellement
-- Traitement pixel par pixel pour une compatibilité maximale
-- Compatible avec les formats d'image standard
+- **100% Go natif** - Zéro dépendance externe
+- **Formats supportés** : PNG, JPEG, GIF
+- **Compatibilité** : Windows, macOS, Linux
+- **Terminal** : Unicode et couleurs ANSI
+- **Performance** : Algorithmes optimisés pixel par pixel
 
 ---
 
-## Pour aller plus loin
+## 💡 Exemples d'Usage
 
-- Ajouter d'autres effets (contraste, luminosité, flou...)
-- Améliorer l'algorithme de redimensionnement (bilinéaire, bicubique)
-- Ajouter des outils de sélection de zones
-- Implémenter des filtres de convolution
-- Ajouter des outils de dessin plus avancés (ligne, triangle, texte)
+### Test Rapide
+```bash
+./goimage
+# 1 → Navigation → test/test_image.png
+# 2 → 3 (Sépia)
+# 5 → test_sepia.png
+```
 
----
-
-## Auteur
-
-Projet GoImage, architecture modulaire et évolutive, inspirée par les bonnes pratiques Go.
+### Workflow Complet
+```bash
+# 1. Charger image HD
+# 2. Luminosité (factor: 1.2)
+# 3. Contraste (factor: 1.5)
+# 4. Cercle rouge au centre (255,0,0)
+# 5. Redimensionner HD (1920×1080)
+# 6. Sauvegarder JPEG qualité 95
+```
