@@ -85,14 +85,14 @@ func (t *TriangleEffect) Apply(img image.Image) image.Image {
 
 func drawFilledTriangle(img *image.RGBA, x1, y1, x2, y2, x3, y3 int, color color.Color) {
 	bounds := img.Bounds()
-	minX := min(min(x1, x2), x3)
-	maxX := max(max(x1, x2), x3)
-	minY := min(min(y1, y2), y3)
-	maxY := max(max(y1, y2), y3)
-	minX = max(minX, bounds.Min.X)
-	maxX = min(maxX, bounds.Max.X-1)
-	minY = max(minY, bounds.Min.Y)
-	maxY = min(maxY, bounds.Max.Y-1)
+	minX := minInt(minInt(x1, x2), x3)
+	maxX := maxInt(maxInt(x1, x2), x3)
+	minY := minInt(minInt(y1, y2), y3)
+	maxY := maxInt(maxInt(y1, y2), y3)
+	minX = maxInt(minX, bounds.Min.X)
+	maxX = minInt(maxX, bounds.Max.X-1)
+	minY = maxInt(minY, bounds.Min.Y)
+	maxY = minInt(maxY, bounds.Max.Y-1)
 	for y := minY; y <= maxY; y++ {
 		for x := minX; x <= maxX; x++ {
 			if pointInTriangle(x, y, x1, y1, x2, y2, x3, y3) {
@@ -134,8 +134,8 @@ func (l *LineEffect) Apply(img image.Image) image.Image {
 
 func drawLine(img *image.RGBA, x1, y1, x2, y2 int, color color.Color) {
 	bounds := img.Bounds()
-	dx := abs(x2 - x1)
-	dy := abs(y2 - y1)
+	dx := absInt(x2 - x1)
+	dy := absInt(y2 - y1)
 	var sx, sy int
 	if x1 < x2 { sx = 1 } else { sx = -1 }
 	if y1 < y2 { sy = 1 } else { sy = -1 }
@@ -151,6 +151,6 @@ func drawLine(img *image.RGBA, x1, y1, x2, y2 int, color color.Color) {
 	}
 }
 
-func min(a, b int) int { if a < b { return a }; return b }
-func max(a, b int) int { if a > b { return a }; return b }
-func abs(x int) int { if x < 0 { return -x }; return x } 
+func minInt(a, b int) int { if a < b { return a }; return b }
+func maxInt(a, b int) int { if a > b { return a }; return b }
+func absInt(x int) int { if x < 0 { return -x }; return x } 
