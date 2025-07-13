@@ -16,14 +16,26 @@ func (s *SepiaEffect) Apply(img image.Image) image.Image {
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, a := img.At(x, y).RGBA()
-			gray := 0.299*float64(r>>8) + 0.587*float64(g>>8) + 0.114*float64(b>>8)
-			sepiaR := uint8(min(255, int(0.393*gray+0.769*gray+0.189*gray)))
-			sepiaG := uint8(min(255, int(0.349*gray+0.686*gray+0.168*gray)))
-			sepiaB := uint8(min(255, int(0.272*gray+0.534*gray+0.131*gray)))
+
+			r8 := float64(r >> 8)
+			g8 := float64(g >> 8)
+			b8 := float64(b >> 8)
+			
+			sepiaR := uint8(min(255, int(0.393*r8+0.769*g8+0.189*b8)))
+			sepiaG := uint8(min(255, int(0.349*r8+0.686*g8+0.168*b8)))
+			sepiaB := uint8(min(255, int(0.272*r8+0.534*g8+0.131*b8)))
+			
 			result.Set(x, y, color.RGBA{R: sepiaR, G: sepiaG, B: sepiaB, A: uint8(a >> 8)})
 		}
 	}
 	return result
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
  
