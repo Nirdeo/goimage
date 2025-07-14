@@ -47,12 +47,23 @@ goimage/
 
 ### Installation et Test
 
+#### Windows
+```cmd
+# Compilation
+go build -o goimage.exe ./cmd/goimage/
+
+# Lancement
+./goimage.exe
+```
+
+#### macOS/Linux
 ```bash
 # Compilation
 go build -o goimage ./cmd/goimage/
 
 # Lancement
 ./goimage
+```
 
 # Test avec image fournie
 # 1. Choisir option 1 (Charger une image)
@@ -148,6 +159,16 @@ type FileInfo struct {
 ## 💡 Exemples d'Usage
 
 ### Test Rapide
+
+#### Windows
+```cmd
+./goimage.exe
+# 1 → Navigation → test/test_image.png
+# 2 → 3 (Sépia)
+# 5 → test_sepia.png
+```
+
+#### macOS/Linux
 ```bash
 ./goimage
 # 1 → Navigation → test/test_image.png
